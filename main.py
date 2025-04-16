@@ -34,3 +34,9 @@ if __name__ == "__main__":
         for sym in SYMBOLS:
             analyze(sym, INTERVAL)
         time.sleep(900)  # اجرای هر ۱۵ دقیقه یک‌بار
+from telegram_bot import send_telegram_message
+
+if __name__ == "__main__":
+    print("Sending test message...")
+    result = send_telegram_message("تست پیام از Railway")
+    print(result)
