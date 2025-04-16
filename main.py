@@ -1,39 +1,32 @@
-# main.py
-from indicators import add_indicators
 from lbank_api import get_ohlcv
-
-df = get_ohlcv()
-df = add_indicators(df)
-print(df.tail())
-from lbank import get_ohlcv
 from indicators import add_indicators
-from signal import generate_signal
-from telegram import send_telegram_message
 import time
 
-SYMBOL = 'btc_usdt'
-INTERVAL = '15min'
-LIMIT = 100
+def analyze(symbol: str, interval: str):
+    print(f"در حال دریافت داده برای {symbol} با تایم‌فریم {interval}...")
+    df = get_ohlcv(symbol=symbol, interval=interval, limit=100)
+
+    if df is None or df.empty:
+        print("داده‌ای دریافت نشد.")
+        return
+
+    df = add_indicators(df)
+    print("تحلیل کامل شد. نتایج:")
+    print(df.tail())
 
 def main():
-    print("Starting analysis...")
+    # لیست ارزها و تایم‌فریم‌ها
+    symbols = ['btc_usdt', 'eth_usdt', 'sol_usdt']
+    intervals = ['15min', '1h']
 
-    try:
-        df = get_ohlcv(symbol=SYMBOL, interval=INTERVAL, limit=LIMIT)
-        df = add_indicators(df)
-        signals = generate_signal(df)
-
-        if signals:
-            message = f"Signal for {SYMBOL.upper()} ({INTERVAL}):\n" + "\n".join(signals)
-            send_telegram_message(message)
-            print("Signal sent.")
-        else:
-            print("No strong signal found.")
-
-    except Exception as e:
-        print(f"Error: {e}")
-
-if __name__ == "__main__":
     while True:
-        main()
-        time.sleep(900)  # هر 15 دقیقه یکبار
+        for symbol in symbols:
+            for interval in intervals:
+                analyze(symbol, interval)
+
+        # هر ۱۵ دقیقه یک بار تحلیل انجام شود
+        print("در حال استراحت تا اجرای بعدی...")
+        time.sleep(900)  # 900 ثانیه = 15 دقیقه
+
+if __name__ == '__main__':
+    main()
