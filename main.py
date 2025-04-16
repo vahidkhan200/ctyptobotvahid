@@ -1,40 +1,50 @@
 import requests
 import pandas as pd
-import ta
 from telegram_bot import send_telegram_message
 
-def fetch_lbank_ohlcv(symbol="btc_usdt", size=100):
-    url = f"https://api.lbank.info/v1/kline?symbol={symbol}&size={size}&type=day"
+symbols = [
+    "btc_usdt", "eth_usdt", "bnb_usdt", "sol_usdt", "ada_usdt", "xrp_usdt", "dot_usdt",
+    "link_usdt", "avax_usdt", "doge_usdt", "matic_usdt", "shib_usdt", "grs_usdt", "not_usdt",
+    "dogz_usdt", "xlm_usdt", "hbar_usdt", "xdc_usdt"
+]
+
+def fetch_ohlcv(symbol):
+    url = f"https://api.lbkex.com/v2/kline.do?symbol={symbol}&size=100&type=1min"
     try:
         response = requests.get(url)
         data = response.json()
-        return data['data'] if 'data' in data else None
+        if "datas" not in data or "klines" not in data["datas"]:
+            return None
+        df = pd.DataFrame(data["datas"]["klines"])
+        df.columns = ["timestamp", "open", "high", "low", "close", "volume"]
+        df["close"] = df["close"].astype(float)
+        return df
     except Exception as e:
-        print(f"Error fetching OHLCV data: {e}")
+        print(f"Error fetching data for {symbol}: {e}")
         return None
 
-def analyze_rsi(ohlcv):
-    df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
-    df["close"] = df["close"].astype(float)
-    df["rsi"] = ta.momentum.RSIIndicator(close=df["close"]).rsi()
-
-    latest_rsi = df["rsi"].iloc[-1]
-
-    if latest_rsi < 30:
-        return "RSI: بازار اشباع فروش است. احتمال بازگشت قیمت وجود دارد."
-    elif latest_rsi > 70:
-        return "RSI: بازار اشباع خرید است. ممکن است قیمت اصلاح شود."
-    else:
-        return f"RSI فعلی: {round(latest_rsi, 2)} - وضعیت نرمال"
-
-def main():
-    ohlcv_data = fetch_lbank_ohlcv()
-    if not ohlcv_data:
-        send_telegram_message("دریافت دیتا از LBank با خطا مواجه شد.")
+def analyze_and_alert(symbol):
+    df = fetch_ohlcv(symbol)
+    if df is None or df.empty:
+        print(f"No data for {symbol}")
         return
 
-    message = analyze_rsi(ohlcv_data)
-    send_telegram_message(message)
+    df["rsi"] = df["close"].pct_change().rolling(14).apply(
+        lambda x: 100 - (100 / (1 + x[x > 0].mean() / abs(x[x < 0].mean()))) if x[x < 0].mean() != 0 else 50
+    )
+
+    latest_rsi = df["rsi"].iloc[-1]
+    message = None
+
+    if latest_rsi < 30:
+        message = f"✅ سیگنال خرید احتمالی ({symbol.upper()}) - RSI: {latest_rsi:.2f}"
+    elif latest_rsi > 70:
+        message = f"⚠️ سیگنال فروش احتمالی ({symbol.upper()}) - RSI: {latest_rsi:.2f}"
+
+    if message:
+        print(message)
+        send_telegram_message(message)
 
 if __name__ == "__main__":
-    main()
+    for symbol in symbols:
+        analyze_and_alert(symbol)
