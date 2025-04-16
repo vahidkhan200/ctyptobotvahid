@@ -5,11 +5,9 @@ def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
-        "text": message,
-        "parse_mode": "HTML"
+        "text": message
     }
     try:
-        response = requests.post(url, data=payload)
-        response.raise_for_status()
+        requests.post(url, data=payload)
     except Exception as e:
-        print(f"خطا در ارسال پیام به تلگرام: {e}")
+        print("Telegram Error:", e)
