@@ -4,22 +4,28 @@ import requests
 import pandas as pd
 from config import LBANK_API_URL
 
-def get_ohlcv(symbol='btc_usdt', interval='15min', limit=100):
+def get_ohlcv(symbol, interval='15min', limit=100):
+    endpoint = f"{LBANK_API_URL}/v1/kline"
     params = {
         'symbol': symbol,
         'size': limit,
         'type': interval
     }
-    response = requests.get(LBANK_API_URL, params=params)
-    data = response.json()['data']
+    try:
+        response = requests.get(endpoint, params=params)
+        data = response.json()
 
-    df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
-    df = df.astype({
-        'open': 'float',
-        'high': 'float',
-        'low': 'float',
-        'close': 'float',
-        'volume': 'float'
-    })
-    return df
+        if data['result'] != 'true':
+            raise Exception(f"API error: {data}")
+
+        kline_data = data['data']
+        df = pd.DataFrame(kline_data, columns=[
+            'timestamp', 'open', 'high', 'low', 'close', 'volume'
+        ])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
+        return df
+
+    except Exception as e:
+        print(f"Error fetching OHLCV data for {symbol}: {e}")
+        return pd.DataFrame()
