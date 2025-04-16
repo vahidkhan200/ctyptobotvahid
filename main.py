@@ -1,7 +1,7 @@
 import time
 from lbank_api import get_ohlcv
 from indicators import add_indicators
-from telegram import send_telegram_message
+from telegram_bot import send_telegram_message
 from config import SYMBOLS, INTERVAL
 
 def analyze(symbol, interval):
