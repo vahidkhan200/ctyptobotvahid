@@ -1,5 +1,10 @@
 # main.py
+from indicators import add_indicators
+from lbank_api import get_ohlcv
 
+df = get_ohlcv()
+df = add_indicators(df)
+print(df.tail())
 from lbank import get_ohlcv
 from indicators import add_indicators
 from signal import generate_signal
