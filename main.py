@@ -1,17 +1,11 @@
 from lbank_api import get_ohlcv
-from config import SYMBOLS, INTERVAL
 from telegram_bot import send_telegram_message
 
-def main():
-    for symbol in SYMBOLS:
-        try:
-            data = get_ohlcv(symbol, INTERVAL)
-            if data:
-                send_telegram_message(f"دیتای {symbol} با موفقیت دریافت شد.")
-            else:
-                send_telegram_message(f"دیتایی برای {symbol} پیدا نشد.")
-        except Exception as e:
-            send_telegram_message(f"خطا در دریافت دیتا برای {symbol}: {str(e)}")
+df = get_ohlcv('btc_usdt', interval='15min', limit=50)
 
-if __name__ == "__main__":
-    main()
+if not df.empty:
+    last_close = df['close'].iloc[-1]
+    msg = f"آخرین قیمت BTC/USDT در تایم‌فریم ۱۵ دقیقه: {last_close}"
+    send_telegram_message(msg)
+else:
+    send_telegram_message("دریافت دیتا از LBank با خطا مواجه شد.")
