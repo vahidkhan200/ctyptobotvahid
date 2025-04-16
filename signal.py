@@ -1,28 +1,19 @@
 # signal.py
 
 def generate_signal(df):
+    if df is None or df.empty:
+        return None
+
     latest = df.iloc[-1]
 
-    signals = []
+    signal = None
 
-    # سیگنال خرید بر اساس MACD کراس
-    if latest['MACD'] > latest['MACD_signal'] and df.iloc[-2]['MACD'] < df.iloc[-2]['MACD_signal']:
-        signals.append("MACD: Buy")
+    # مثال: اگر RSI کمتر از 30 و MACD کراس به بالا زده باشه = سیگنال خرید
+    if latest['rsi'] < 30 and latest['macd'] > latest['signal']:
+        signal = 'buy'
 
-    # سیگنال فروش MACD
-    if latest['MACD'] < latest['MACD_signal'] and df.iloc[-2]['MACD'] > df.iloc[-2]['MACD_signal']:
-        signals.append("MACD: Sell")
+    # اگر RSI بالاتر از 70 و MACD کراس به پایین زده باشه = سیگنال فروش
+    elif latest['rsi'] > 70 and latest['macd'] < latest['signal']:
+        signal = 'sell'
 
-    # سیگنال خرید بر اساس RSI
-    if latest['RSI'] < 30:
-        signals.append("RSI: Oversold (Buy)")
-    elif latest['RSI'] > 70:
-        signals.append("RSI: Overbought (Sell)")
-
-    # کراس قیمت و EMA
-    if latest['close'] > latest['EMA_20'] and df.iloc[-2]['close'] <= df.iloc[-2]['EMA_20']:
-        signals.append("Price crossed above EMA20 (Buy)")
-    elif latest['close'] < latest['EMA_20'] and df.iloc[-2]['close'] >= df.iloc[-2]['EMA_20']:
-        signals.append("Price crossed below EMA20 (Sell)")
-
-    return signals
+    return signal
