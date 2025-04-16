@@ -1,22 +1,17 @@
 import time
 from config import SYMBOLS
-from telegram_bot import send_telegram_message
 from technical import fetch_ohlcv, analyze_market
+from telegram_bot import send_telegram_message
 
-def main():
-    while True:
-        for symbol in SYMBOLS:
-            try:
-                ohlcv = fetch_ohlcv(symbol)
-                if ohlcv:
-                    signal = analyze_market(ohlcv)
-                    if signal:
-                        send_telegram_message(f"سیگنال برای {symbol.upper()}:\n{signal}")
-            except Exception as e:
-                send_telegram_message(f"خطا در پردازش {symbol}: {str(e)}")
+while True:
+    for symbol in SYMBOLS:
+        print(f"بررسی {symbol}...")
+        df = fetch_ohlcv(symbol)
+        signal = analyze_market(df)
 
-        # هر ۱۵ دقیقه اجرا میشه
-        time.sleep(900)
+        if signal:
+            message = f"سیگنال برای {symbol.upper()}:\n{signal}"
+            send_telegram_message(message)
 
-if __name__ == "__main__":
-    main()
+    print("پایان بررسی - 15 دقیقه استراحت...")
+    time.sleep(900)  # اجرای هر ۱۵ دقیقه یکبار
