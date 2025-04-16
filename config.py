@@ -1,8 +1,8 @@
 # config.py
 
 # توکن و چت آیدی تلگرام (حتماً مقدارها رو با مقادیر واقعی جایگزین کن)
-TELEGRAM_BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
-TELEGRAM_CHAT_ID = 'YOUR_TELEGRAM_CHAT_ID'
+TELEGRAM_BOT_TOKEN = '7808088088:AAGu9D1Vr5Iq6lrrE7P2jbMr32_-K6Y8wF4'
+TELEGRAM_CHAT_ID = '392018191'
 
 # لیست ارزهای موردنظر (مطابق با نمادهای LBank)
 SYMBOLS = [
