@@ -5,20 +5,10 @@ TELEGRAM_BOT_TOKEN = '7808088088:AAGu9D1Vr5Iq6lrrE7P2jbMr32_-K6Y8wF4'
 TELEGRAM_CHAT_ID = '392018191'
 
 # لیست ارزهای موردنظر (مطابق با نمادهای LBank)
-SYMBOLS = [
-    'btc_usdt',
-    'eth_usdt',
-    'bnb_usdt',
-    'sol_usdt',
-    'ada_usdt',
-    'xrp_usdt',
-    'dot_usdt',
-    'doge_usdt',
-    'matic_usdt',
-    'ltc_usdt',
-    'link_usdt',
-    'uni_usdt',
-    'avax_usdt'
+SYMBOLS = [symbols = [
+    "btc_usdt", "eth_usdt", "bnb_usdt", "sol_usdt", "ada_usdt", 
+    "xrp_usdt", "dot_usdt", "matic_usdt", "ltc_usdt", "grt_usdt",
+    "grs_usdt", "not_usdt", "doge_usdt", "xlm_usdt", "hbar_usdt", "xdc_usdt"
 ]
 
 # تایم‌فریم تحلیل
