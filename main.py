@@ -3,12 +3,7 @@ import pandas as pd
 import time
 from telegram_bot import send_telegram_message
 from ta_utils import is_buy_signal
-
-symbols = [
-    "btc_usdt", "eth_usdt", "bnb_usdt", "sol_usdt", "ada_usdt", "xrp_usdt",
-    "dot_usdt", "matic_usdt", "ltc_usdt", "grt_usdt", "grs_usdt", "not_usdt",
-    "doge_usdt", "xlm_usdt", "hbar_usdt", "xdc_usdt"
-]
+from config import SYMBOLS
 
 def fetch_ohlcv(symbol):
     try:
