@@ -1,26 +1,36 @@
 import requests
-import pandas as pd
-import time
-from telegram_bot import send_telegram_message
-from ta_utils import is_buy_signal
 from config import SYMBOLS
-    :for symbol in SYMBOLS
+from telegram_bot import send_telegram_message
+
 def fetch_ohlcv(symbol):
+    url = f"https://api.lbkex.com/v2/kline.do?symbol={symbol}&size=50&type=1hour"
     try:
-        url = f"https://api.lbank.info/v2/kline.do?symbol={symbol}&type=15min&size=100"
         response = requests.get(url)
         data = response.json()
-        df = pd.DataFrame(data['data'], columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        df['close'] = pd.to_numeric(df['close'])
-        return df
+        if "datas" in data:
+            return data["datas"]
+        return None
     except Exception as e:
-        print(f"خطا در دریافت دیتا از LBank برای {symbol}: {e}")
+        print(f"Error fetching OHLCV data for {symbol}: {e}")
+        send_telegram_message(f"دریافت دیتا از LBank برای {symbol} با خطا مواجه شد.")
         return None
 
-for symbol in symbols:
-    df = fetch_ohlcv(symbol)
-    if df is not None and is_buy_signal(df):
-        message = f"سیگنال خرید روی {symbol.upper()} ظاهر شد!"
-        send_telegram_message(message)
+def analyze_data(ohlcv_data):
+    if not ohlcv_data or len(ohlcv_data) < 2:
+        return None
+    latest_close = float(ohlcv_data[-1][2])
+    previous_close = float(ohlcv_data[-2][2])
+    if latest_close > previous_close:
+        return "سیگنال خرید"
+    elif latest_close < previous_close:
+        return "سیگنال فروش"
+    else:
+        return None
 
-time.sleep(3)  # اگر بخوایم با فاصله اجرا کنیم یا بعداً بزاریم تو حلقه
+for symbol in SYMBOLS:
+    ohlcv = fetch_ohlcv(symbol)
+    signal = analyze_data(ohlcv)
+    if signal:
+        msg = f"{signal} برای {symbol.upper()}"
+        print(msg)
+        send_telegram_message(msg)
