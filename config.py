@@ -1,6 +1,6 @@
 # config.py
 
-# توکن و چت آیدی تلگرام (حتماً مقدارها رو با مقادیر واقعی جایگزین کن)
+# توکن و چت آیدی تلگرام (مقدارها رو با مقادیر واقعی جایگزین کن)
 TELEGRAM_BOT_TOKEN = '7808088088:AAGu9D1Vr5Iq6lrrE7P2jbMr32_-K6Y8wF4'
 TELEGRAM_CHAT_ID = '392018191'
 
@@ -24,13 +24,14 @@ SYMBOLS = [
 # تایم‌فریم تحلیل
 INTERVAL = '15min'
 
-# تنظیمات تحلیل تکنیکال (در صورت نیاز می‌تونی تغییر بدی)
+# آدرس API صرافی LBank
+LBANK_API_URL = 'https://api.lbkex.com'
+
+# تنظیمات تحلیل تکنیکال
 MACD_FAST = 12
 MACD_SLOW = 26
 MACD_SIGNAL = 9
 
 RSI_PERIOD = 14
-
 EMA_PERIOD = 20
-
 ATR_PERIOD = 14
