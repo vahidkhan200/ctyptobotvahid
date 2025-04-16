@@ -4,7 +4,7 @@ import time
 from telegram_bot import send_telegram_message
 from ta_utils import is_buy_signal
 from config import SYMBOLS
-
+    :for symbol in SYMBOLS
 def fetch_ohlcv(symbol):
     try:
         url = f"https://api.lbank.info/v2/kline.do?symbol={symbol}&type=15min&size=100"
