@@ -4,3 +4,4 @@ requests
 matplotlib
 numpy
 ccxt
+python-telegram-bot
