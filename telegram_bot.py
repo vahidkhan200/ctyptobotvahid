@@ -5,9 +5,16 @@ def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
-        "text": message
+        "text": message,
+        "parse_mode": "HTML"
     }
-    try:
-        requests.post(url, data=payload)
-    except Exception as e:
-        print("Telegram Error:", e)
+    requests.post(url, data=payload)
+
+def send_telegram_photo(photo_path, caption=None):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+    with open(photo_path, 'rb') as photo:
+        files = {'photo': photo}
+        data = {'chat_id': TELEGRAM_CHAT_ID}
+        if caption:
+            data['caption'] = caption
+        requests.post(url, files=files, data=data)
