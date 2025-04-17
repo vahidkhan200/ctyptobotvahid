@@ -1,34 +1,33 @@
+import ccxt
 import time
-import csv
-from datetime import datetime
-from config import SYMBOLS
-from strategies import analyze_symbol
+from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, SYMBOLS
 from telegram_bot import send_telegram_message
+from strategies import analyze_symbol
 
-previous_signals = {}
+exchange = ccxt.lbank({
+    'enableRateLimit': True,
+})
 
-def log_signal(symbol, signal):
-    with open("signals_log.csv", "a", newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow([datetime.now(), symbol, signal, "1h & 4h"])
+def fetch_ohlcv(symbol, timeframe='1h', limit=100):
+    try:
+        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+        return ohlcv
+    except Exception as e:
+        print(f"خطا در دریافت داده {symbol}: {e}")
+        return None
 
-while True:
+def main():
     for symbol in SYMBOLS:
-        try:
-            print(f"در حال بررسی: {symbol}")
-            result = analyze_symbol(symbol)
+        print(f"در حال بررسی {symbol}")
+        ohlcv = fetch_ohlcv(symbol)
+        if ohlcv:
+            messages = analyze_symbol(symbol, ohlcv)
+            for msg in messages:
+                send_telegram_message(msg)
+        time.sleep(1.5)  # جلوگیری از محدودیت API
 
-            if result and previous_signals.get(symbol) != result:
-                send_telegram_message(f"{symbol}: {result}")
-                log_signal(symbol, result)
-                previous_signals[symbol] = result
-
-            elif not result:
-                previous_signals[symbol] = None
-
-        except Exception as e:
-            print(f"خطا در بررسی {symbol}: {e}")
-            send_telegram_message(f"خطا در بررسی {symbol}: {e}")
-    
-    print("منتظر 10 دقیقه بعد...")
-    time.sleep(600)
+if __name__ == '__main__':
+    while True:
+        main()
+        print("پایان بررسی، شروع دور جدید بعد از 60 دقیقه...")
+        time.sleep(3600)  # اجرای هر ساعت
