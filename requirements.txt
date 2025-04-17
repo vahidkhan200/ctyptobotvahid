@@ -3,3 +3,4 @@ ta
 requests
 matplotlib
 numpy
+ccxt
