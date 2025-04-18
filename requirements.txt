@@ -5,4 +5,4 @@ matplotlib
 numpy
 ccxt
 python-telegram-bot
-talib
+ta-lib
