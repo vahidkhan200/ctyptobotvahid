@@ -4,4 +4,4 @@ requests
 numpy
 ccxt
 python-telegram-bot
-
+strategies
