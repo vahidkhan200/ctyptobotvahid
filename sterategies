@@ -1,69 +1,79 @@
+# strategies.py
+
 import talib
 import numpy as np
+import pandas as pd
 
-def analyze_symbol(symbol, df):
-    signals = []
-    close = df['close'].values
-    open_ = df['open'].values
-    high = df['high'].values
-    low = df['low'].values
-    volume = df['volume'].values
+def detect_candle_patterns(df):
+    patterns = {
+        'Hammer': talib.CDLHAMMER,
+        'Engulfing': talib.CDLENGULFING,
+        'Doji': talib.CDLDOJI,
+        'Morning Star': talib.CDLMORNINGSTAR,
+        'Shooting Star': talib.CDLSHOOTINGSTAR
+    }
 
-    ### اندیکاتورها ###
-    rsi = talib.RSI(close, timeperiod=14)
-    macd, macdsignal, _ = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
-    atr = talib.ATR(high, low, close, timeperiod=14)
-    ema9 = talib.EMA(close, timeperiod=9)
-    ema21 = talib.EMA(close, timeperiod=21)
+    detected = []
+    for name, func in patterns.items():
+        result = func(df['open'], df['high'], df['low'], df['close'])
+        if result.iloc[-1] != 0:
+            detected.append(name)
+    return detected
 
-    if rsi[-1] < 30:
-        signals.append("RSI زیر ۳۰ (اشباع فروش) - سیگنال خرید احتمالی")
-    elif rsi[-1] > 70:
-        signals.append("RSI بالای ۷۰ (اشباع خرید) - سیگنال فروش احتمالی")
 
-    if macd[-1] > macdsignal[-1] and macd[-2] <= macdsignal[-2]:
-        signals.append("تقاطع صعودی MACD - احتمال رشد قیمت")
-    elif macd[-1] < macdsignal[-1] and macd[-2] >= macdsignal[-2]:
-        signals.append("تقاطع نزولی MACD - احتمال افت قیمت")
+def detect_chart_patterns(df):
+    pattern = None
+    if df['close'].iloc[-2] < df['close'].iloc[-1] and df['low'].iloc[-2] == df['low'].min():
+        pattern = 'کف دوقلو'
+    elif df['close'].iloc[-2] > df['close'].iloc[-1] and df['high'].iloc[-2] == df['high'].max():
+        pattern = 'سقف دوقلو'
+    # ادامه بده با الگوهای سر و شانه، مثلث، پرچم...
+    return pattern
 
-    if ema9[-1] > ema21[-1] and ema9[-2] <= ema21[-2]:
-        signals.append("تقاطع صعودی EMA")
-    elif ema9[-1] < ema21[-1] and ema9[-2] >= ema21[-2]:
-        signals.append("تقاطع نزولی EMA")
 
-    ### پرایس اکشن و الگوهای کندلی ###
-    if close[-1] > open_[-1] and (close[-1] - open_[-1]) > ((high[-1] - low[-1]) * 0.6):
-        signals.append("کندل صعودی قوی مشاهده شد")
+def get_support_resistance(df):
+    supports = df['low'].rolling(window=10).min()
+    resistances = df['high'].rolling(window=10).max()
+    return supports.iloc[-1], resistances.iloc[-1]
 
-    if talib.CDLHAMMER(open_, high, low, close)[-1] != 0:
-        signals.append("الگوی چکشی (Hammer) دیده شد")
 
-    if talib.CDLENGULFING(open_, high, low, close)[-1] > 0:
-        signals.append("الگوی پوشای صعودی دیده شد")
-    elif talib.CDLENGULFING(open_, high, low, close)[-1] < 0:
-        signals.append("الگوی پوشای نزولی دیده شد")
+def analyze_symbol(symbol, timeframe, df):
+    df = df.copy()
 
-    ### حمایت و مقاومت ###
-    recent_high = max(high[-20:])
-    recent_low = min(low[-20:])
-    if close[-1] >= recent_high * 0.99:
-        signals.append("قیمت نزدیک مقاومت مهمه")
-    elif close[-1] <= recent_low * 1.01:
-        signals.append("قیمت نزدیک حمایت مهمه")
+    # اندیکاتورها
+    df['rsi'] = talib.RSI(df['close'], timeperiod=14)
+    df['macd'], _, _ = talib.MACD(df['close'])
+    df['ema50'] = talib.EMA(df['close'], timeperiod=50)
+    df['ema200'] = talib.EMA(df['close'], timeperiod=200)
 
-    ### الگوهای نموداری ساده ###
-    if close[-1] > close[-2] and close[-2] < close[-3]:
-        signals.append("احتمال تشکیل کف دوقلو")
-    if close[-1] < close[-2] and close[-2] > close[-3]:
-        signals.append("احتمال تشکیل سقف دوقلو")
+    last_close = df['close'].iloc[-1]
+    rsi = df['rsi'].iloc[-1]
+    macd = df['macd'].iloc[-1]
 
-    # در آینده می‌تونیم الگوهای پیچیده‌تر مثل پرچم، مثلث، کانال، و هارمونیک رو اضافه کنیم با الگوریتم‌های تشخیص خاص.
+    # بررسی شرایط خرید
+    if rsi < 30 and macd > 0 and df['ema50'].iloc[-1] > df['ema200'].iloc[-1]:
+        candle_patterns = detect_candle_patterns(df)
+        chart_pattern = detect_chart_patterns(df)
+        support, resistance = get_support_resistance(df)
 
-    ### مدیریت سرمایه - ریسک ساده ###
-    risk = atr[-1] / close[-1]
-    if risk < 0.01:
-        signals.append("ریسک معامله پایین است")
-    elif risk > 0.05:
-        signals.append("ریسک معامله بالا است")
+        tp1 = round(last_close * 1.02, 2)
+        tp2 = round(last_close * 1.04, 2)
+        sl = round(last_close * 0.98, 2)
 
-    return signals
+        msg = f"""
+✅ سیگنال خرید:
+
+نام ارز: {symbol}
+تایم‌فریم: {timeframe}
+نقطه ورود: {last_close}
+تارگت ۱: {tp1}
+تارگت ۲: {tp2}
+حد ضرر: {sl}
+لورج پیشنهادی: x5
+
+الگوهای کندلی: {', '.join(candle_patterns) if candle_patterns else 'ندارد'}
+الگوهای نموداری: {chart_pattern if chart_pattern else 'مشخص نیست'}
+حمایت: {round(support, 2)} | مقاومت: {round(resistance, 2)}
+        """.strip()
+        return msg
+    return None
