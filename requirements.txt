@@ -1,8 +1,7 @@
 pandas
 ta
 requests
-matplotlib
 numpy
 ccxt
-python-telegram-bot==13.15
-talib
+python-telegram-bot
+
