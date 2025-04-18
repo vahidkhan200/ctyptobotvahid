@@ -18,16 +18,22 @@ def fetch_ohlcv(symbol, timeframe='1h', limit=100):
 while True:
     for symbol in symbols:
         try:
-            df = fetch_ohlcv(symbol)
-            signals = analyze_symbol(symbol, df)
+            df = fetch_ohlcv(symbol, timeframe='1h')
+            signal = analyze_symbol(symbol, df)
 
-            if signals:
-                message = f"📊 **تحلیل تکنیکال {symbol}**\n\n"
-                for signal in signals:
-                    message += f"• {signal}\n"
+            if signal:
+                message = f"""
+ارز: {symbol}
+تایم‌فریم: 1 ساعت
+نقطه ورود: {signal['entry']}
+تارگت ۱: {signal['target1']}
+تارگت ۲: {signal['target2']}
+حد ضرر: {signal['stop_loss']}
+لورج پیشنهادی: {signal['leverage']}x
+"""
                 send_telegram_message(message)
 
         except Exception as e:
             print(f"Error with {symbol}: {e}")
 
-    time.sleep(60 * 60)  # اجرای تحلیل هر ۱ ساعت
+    time.sleep(60 * 60)  # هر ۱ ساعت یکبار
