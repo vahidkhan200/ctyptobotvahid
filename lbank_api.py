@@ -1,22 +1,23 @@
 import requests
-from config import LBANK_API_URL
 
 def get_symbols():
-    url = f"{LBANK_API_URL}/v2/currencyPairs.do"
+    url = "https://api.lbkex.com/v2/ticker/24hr.do"
+    
+    # درخواست به API
     response = requests.get(url)
+    
+    # بررسی وضعیت پاسخ
     if response.status_code == 200:
+        # تبدیل پاسخ به دیکشنری JSON
         data = response.json()
-        return [item['symbol'] for item in data.get('data', [])]
-    return []
-
-def get_klines(symbol, interval="1min", size=100):
-    url = f"{LBANK_API_URL}/v1/kline.do"
-    params = {
-        "symbol": symbol,
-        "type": interval,
-        "size": size
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        return response.json()
-    return []
+        
+        # بررسی وجود داده‌ها در پاسخ
+        if 'data' in data:
+            # استخراج نمادها از داده‌ها
+            return [item['symbol'] for item in data['data']]
+        else:
+            print("داده 'data' در پاسخ یافت نشد.")
+            return []
+    else:
+        print(f"خطا در دریافت داده‌ها. کد وضعیت: {response.status_code}")
+        return []
