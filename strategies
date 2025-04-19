@@ -1,67 +1,38 @@
-import pandas as pd
-import talib
-from indicators import calculate_indicators
-from pattern_detector import detect_candlestick_patterns
-from chart_patterns import detect_chart_patterns
-from ta_utils import detect_harmonic_patterns
-from __utils.support_resistance import detect_support_resistance
+# strategies.py
 
-def analyze_symbol(df: pd.DataFrame, symbol: str, timeframe: str, leverage: int = 10):
-    signals = []
+def analyze_symbol(symbol_data):
+    """
+    تحلیل ساده‌ی داده‌های قیمت برای تولید سیگنال ترید.
+    ورودی: symbol_data شامل 'symbol' و 'klines' (لیست کندل‌ها)
+    خروجی: دیکشنری شامل symbol و سیگنال ('buy', 'sell', 'hold')
+    """
 
-    # محاسبه اندیکاتورها
-    df = calculate_indicators(df)
+    try:
+        klines = symbol_data.get('klines', [])
+        symbol = symbol_data.get('symbol', 'UNKNOWN')
 
-    # تشخیص الگوهای کندلی
-    candle_signals = detect_candlestick_patterns(df)
+        if len(klines) < 2:
+            return {'symbol': symbol, 'signal': 'hold'}
 
-    # تشخیص الگوهای نموداری
-    chart_signals = detect_chart_patterns(df)
+        # فرض: قیمت بسته شدن کندل آخر و قبل از آن
+        last_close = float(klines[-1][4])
+        prev_close = float(klines[-2][4])
 
-    # تشخیص الگوهای هارمونیک
-    harmonic_signals = detect_harmonic_patterns(df)
+        if last_close > prev_close * 1.01:
+            signal = 'buy'
+        elif last_close < prev_close * 0.99:
+            signal = 'sell'
+        else:
+            signal = 'hold'
 
-    # تشخیص نواحی حمایت و مقاومت
-    support, resistance = detect_support_resistance(df)
+        return {
+            'symbol': symbol,
+            'signal': signal
+        }
 
-    # بررسی شرایط ورود
-    for index in range(-3, 0):
-        signal_type = None
-
-        if (
-            df['MACD_Hist'][index] > 0
-            and df['RSI'][index] < 70
-            and df['EMA20'][index] > df['EMA50'][index]
-            and candle_signals[index] == 'bullish'
-        ):
-            signal_type = 'Buy'
-
-        elif (
-            df['MACD_Hist'][index] < 0
-            and df['RSI'][index] > 30
-            and df['EMA20'][index] < df['EMA50'][index]
-            and candle_signals[index] == 'bearish'
-        ):
-            signal_type = 'Sell'
-
-        if signal_type:
-            entry = df['Close'][index]
-            stop_loss = support if signal_type == 'Buy' else resistance
-            target1 = entry * (1.02 if signal_type == 'Buy' else 0.98)
-            target2 = entry * (1.04 if signal_type == 'Buy' else 0.96)
-
-            signal = f"""
-سیگنال جدید ({signal_type}):
-
-نماد: {symbol}
-تایم‌فریم: {timeframe}
-نقطه ورود: {entry:.2f}
-تارگت ۱: {target1:.2f}
-تارگت ۲: {target2:.2f}
-حد ضرر: {stop_loss:.2f}
-لورج: {leverage}X
-            """.strip()
-
-            signals.append(signal)
-
-    return signals
+    except Exception as e:
+        return {
+            'symbol': symbol_data.get('symbol', 'UNKNOWN'),
+            'signal': 'error',
+            'error': str(e)
+        }
