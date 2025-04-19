@@ -1,21 +1,12 @@
-import numpy as np
+import talib
 
-def is_flag_pattern(candles):
-    closes = np.array([c[4] for c in candles])  # فقط قیمت پایانی
-    highs = np.array([c[2] for c in candles])
-    lows = np.array([c[3] for c in candles])
-
-    last = closes[-1]
-    trend = closes[-15:-5]
-
-    # بررسی روند اولیه (مثلاً ۱۰ کندل قبل از consolidation)
-    if trend[-1] < trend[0]:
-        return False, None  # پرچم نیاز به روند اولیه داره
-
-    # consolidation: نوسان محدود در چند کندل آخر
-    cons_high = np.max(highs[-5:])
-    cons_low = np.min(lows[-5:])
-    if (cons_high - cons_low) / cons_low < 0.02:
-        return True, "پرچم صعودی احتمالی"
-
-    return False, None
+def detect_candlestick_patterns(df):
+    patterns = []
+    for i in range(len(df)):
+        pattern = 'none'
+        if talib.CDLHAMMER(df['Open'], df['High'], df['Low'], df['Close'])[i] != 0:
+            pattern = 'bullish'
+        elif talib.CDLHANGINGMAN(df['Open'], df['High'], df['Low'], df['Close'])[i] != 0:
+            pattern = 'bearish'
+        patterns.append(pattern)
+    return patterns
