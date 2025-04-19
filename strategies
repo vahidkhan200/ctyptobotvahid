@@ -1,79 +1,67 @@
-# strategies.py
-
-import talib
-import numpy as np
 import pandas as pd
+import talib
+from indicators import calculate_indicators
+from pattern_detector import detect_candlestick_patterns
+from chart_patterns import detect_chart_patterns
+from ta_utils import detect_harmonic_patterns
+from __utils.support_resistance import detect_support_resistance
 
-def detect_candle_patterns(df):
-    patterns = {
-        'Hammer': talib.CDLHAMMER,
-        'Engulfing': talib.CDLENGULFING,
-        'Doji': talib.CDLDOJI,
-        'Morning Star': talib.CDLMORNINGSTAR,
-        'Shooting Star': talib.CDLSHOOTINGSTAR
-    }
+def analyze_symbol(df: pd.DataFrame, symbol: str, timeframe: str, leverage: int = 10):
+    signals = []
 
-    detected = []
-    for name, func in patterns.items():
-        result = func(df['open'], df['high'], df['low'], df['close'])
-        if result.iloc[-1] != 0:
-            detected.append(name)
-    return detected
+    # محاسبه اندیکاتورها
+    df = calculate_indicators(df)
 
+    # تشخیص الگوهای کندلی
+    candle_signals = detect_candlestick_patterns(df)
 
-def detect_chart_patterns(df):
-    pattern = None
-    if df['close'].iloc[-2] < df['close'].iloc[-1] and df['low'].iloc[-2] == df['low'].min():
-        pattern = 'کف دوقلو'
-    elif df['close'].iloc[-2] > df['close'].iloc[-1] and df['high'].iloc[-2] == df['high'].max():
-        pattern = 'سقف دوقلو'
-    # ادامه بده با الگوهای سر و شانه، مثلث، پرچم...
-    return pattern
+    # تشخیص الگوهای نموداری
+    chart_signals = detect_chart_patterns(df)
 
+    # تشخیص الگوهای هارمونیک
+    harmonic_signals = detect_harmonic_patterns(df)
 
-def get_support_resistance(df):
-    supports = df['low'].rolling(window=10).min()
-    resistances = df['high'].rolling(window=10).max()
-    return supports.iloc[-1], resistances.iloc[-1]
+    # تشخیص نواحی حمایت و مقاومت
+    support, resistance = detect_support_resistance(df)
 
+    # بررسی شرایط ورود
+    for index in range(-3, 0):
+        signal_type = None
 
-def analyze_symbol(symbol, timeframe, df):
-    df = df.copy()
+        if (
+            df['MACD_Hist'][index] > 0
+            and df['RSI'][index] < 70
+            and df['EMA20'][index] > df['EMA50'][index]
+            and candle_signals[index] == 'bullish'
+        ):
+            signal_type = 'Buy'
 
-    # اندیکاتورها
-    df['rsi'] = talib.RSI(df['close'], timeperiod=14)
-    df['macd'], _, _ = talib.MACD(df['close'])
-    df['ema50'] = talib.EMA(df['close'], timeperiod=50)
-    df['ema200'] = talib.EMA(df['close'], timeperiod=200)
+        elif (
+            df['MACD_Hist'][index] < 0
+            and df['RSI'][index] > 30
+            and df['EMA20'][index] < df['EMA50'][index]
+            and candle_signals[index] == 'bearish'
+        ):
+            signal_type = 'Sell'
 
-    last_close = df['close'].iloc[-1]
-    rsi = df['rsi'].iloc[-1]
-    macd = df['macd'].iloc[-1]
+        if signal_type:
+            entry = df['Close'][index]
+            stop_loss = support if signal_type == 'Buy' else resistance
+            target1 = entry * (1.02 if signal_type == 'Buy' else 0.98)
+            target2 = entry * (1.04 if signal_type == 'Buy' else 0.96)
 
-    # بررسی شرایط خرید
-    if rsi < 30 and macd > 0 and df['ema50'].iloc[-1] > df['ema200'].iloc[-1]:
-        candle_patterns = detect_candle_patterns(df)
-        chart_pattern = detect_chart_patterns(df)
-        support, resistance = get_support_resistance(df)
+            signal = f"""
+سیگنال جدید ({signal_type}):
 
-        tp1 = round(last_close * 1.02, 2)
-        tp2 = round(last_close * 1.04, 2)
-        sl = round(last_close * 0.98, 2)
-
-        msg = f"""
-✅ سیگنال خرید:
-
-نام ارز: {symbol}
+نماد: {symbol}
 تایم‌فریم: {timeframe}
-نقطه ورود: {last_close}
-تارگت ۱: {tp1}
-تارگت ۲: {tp2}
-حد ضرر: {sl}
-لورج پیشنهادی: x5
+نقطه ورود: {entry:.2f}
+تارگت ۱: {target1:.2f}
+تارگت ۲: {target2:.2f}
+حد ضرر: {stop_loss:.2f}
+لورج: {leverage}X
+            """.strip()
 
-الگوهای کندلی: {', '.join(candle_patterns) if candle_patterns else 'ندارد'}
-الگوهای نموداری: {chart_pattern if chart_pattern else 'مشخص نیست'}
-حمایت: {round(support, 2)} | مقاومت: {round(resistance, 2)}
-        """.strip()
-        return msg
-    return None
+            signals.append(signal)
+
+    return signals
