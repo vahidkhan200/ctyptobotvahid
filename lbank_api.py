@@ -1,31 +1,22 @@
-# lbank_api.py
-
 import requests
-import pandas as pd
 from config import LBANK_API_URL
 
-def get_ohlcv(symbol, interval='15min', limit=100):
-    endpoint = f"{LBANK_API_URL}/v1/kline"
-    params = {
-        'symbol': symbol,
-        'size': limit,
-        'type': interval
-    }
-    try:
-        response = requests.get(endpoint, params=params)
+def get_symbols():
+    url = f"{LBANK_API_URL}/v2/currencyPairs.do"
+    response = requests.get(url)
+    if response.status_code == 200:
         data = response.json()
+        return [item['symbol'] for item in data.get('data', [])]
+    return []
 
-        if data['result'] != 'true':
-            raise Exception(f"API error: {data}")
-
-        kline_data = data['data']
-        df = pd.DataFrame(kline_data, columns=[
-            'timestamp', 'open', 'high', 'low', 'close', 'volume'
-        ])
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
-        return df
-
-    except Exception as e:
-        print(f"Error fetching OHLCV data for {symbol}: {e}")
-        return pd.DataFrame()
+def get_klines(symbol, interval="1min", size=100):
+    url = f"{LBANK_API_URL}/v1/kline.do"
+    params = {
+        "symbol": symbol,
+        "type": interval,
+        "size": size
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    return []
