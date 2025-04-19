@@ -14,3 +14,4 @@ def send_telegram_message(message):
         requests.post(url, data=payload)
     except Exception as e:
         print(f"خطا در ارسال پیام: {e}")
+send_telegram_signal = send_telegram_message
