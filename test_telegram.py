@@ -1,18 +1,23 @@
-# test_telegram.py
-
 import requests
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
-def send_test_message():
-    url = f"https://api.telegram.org/bot{7769467888:AAHrxpGS8xdM8EzJHz5qVjS774arSP1VfLU}/sendMessage"
-    data = {
-        "chat_id": 392018191,
-        "text": "سلام! این یک پیام تستی از ربات تریدره."
-    }
-    response = requests.post(url, data=data)
-    if response.status_code == 200:
-        print("پیام با موفقیت ارسال شد.")
-    else:
-        print("خطا در ارسال پیام:", response.text)
+# توکن ربات رو اینجا بذار
+BOT_TOKEN = '7769467888:AAHrxpGS8xdM8EzJHz5qVjS774arSP1VfLU'
 
-send_test_message()
+# چت آیدی عددی (مثلاً 123456789) یا username با @
+CHAT_ID = '392018191'
+
+# پیام تستی
+message = "سلام! این یه پیام تستی از ربات تریدر هست."
+
+# ارسال پیام به تلگرام
+url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+data = {
+    "chat_id": CHAT_ID,
+    "text": message
+}
+
+response = requests.post(url, data=data)
+
+# نمایش خروجی برای بررسی
+print("Status Code:", response.status_code)
+print("Response:", response.text)
