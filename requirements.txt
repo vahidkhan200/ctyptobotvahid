@@ -1,7 +1,5 @@
 pandas
-telebot
+python-telegram-bot
 requests
 numpy
 ccxt
-matplotlib
-plotly
