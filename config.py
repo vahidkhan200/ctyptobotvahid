@@ -1,5 +1,4 @@
 # config.py
-# اطلاعات تلگرام
+
 TELEGRAM_BOT_TOKEN = '7808088088:AAGu9D1Vr5Iq6lrrE7P2jbMr32_-K6Y8wF4'
 TELEGRAM_CHAT_ID = '392018191'
-
