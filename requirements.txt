@@ -1,5 +1,5 @@
 pandas
-telbot
+telebot
 requests
 numpy
 ccxt
